@@ -1,202 +1,207 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TSB Developer Portal</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSB Developer Portal</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <div class="app">
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-icon">TSB</div>
-      <div>
-        <h2>TSB STUDIO</h2>
-        <small>DEVELOPER PORTAL</small>
-      </div>
-    </div>
-
-    <div class="nav-label">WORKSPACE</div>
-    <button class="nav-item active" data-page="dashboard">▦ Dashboard</button>
-    <button class="nav-item" data-page="projects">◈ Projects</button>
-    <button class="nav-item" data-page="tasks">✓ Tasks</button>
-    <button class="nav-item" data-page="journal">▤ Journal</button>
-
-    <div class="nav-label">MANAGEMENT</div>
-    <button class="nav-item" data-page="team">♙ Team</button>
-    <button class="nav-item" data-page="settings">⚙ Settings</button>
-
-    <div class="sidebar-bottom">
-      <div class="online-dot"></div>
-      <span>LOCAL WORKSPACE</span>
-      <small>TSB Portal v1.0</small>
-    </div>
-  </aside>
-
-  <main class="main">
-    <header class="topbar">
-      <div>
-        <div class="eyebrow">THE SUPER BOYS STUDIO</div>
-        <h1 id="pageTitle">Dashboard</h1>
-      </div>
-      <div class="top-actions">
-        <span class="status">● SYSTEM ONLINE</span>
-        <select id="roleSelect" aria-label="Workspace role">
-          <option value="Admin">Admin</option>
-          <option value="Team Member">Team Member</option>
-        </select>
-      </div>
-    </header>
-
-    <section id="dashboard" class="page active-page">
-      <div class="welcome">
-        <div>
-          <div class="eyebrow">WELCOME TO YOUR WORKSPACE</div>
-          <h2>Build. Create. Innovate.</h2>
-          <p>Manage your development work from one place.</p>
-        </div>
-        <div class="welcome-mark">TSB<span>.</span></div>
-      </div>
-
-      <div class="stats">
-        <div class="stat-card">
-          <span>Total Projects</span>
-          <strong id="projectCount">0</strong>
-          <small>Registered projects</small>
-        </div>
-        <div class="stat-card">
-          <span>Total Tasks</span>
-          <strong id="taskCount">0</strong>
-          <small>Workspace tasks</small>
-        </div>
-        <div class="stat-card">
-          <span>Completed Tasks</span>
-          <strong id="completedCount">0</strong>
-          <small>Finished work</small>
-        </div>
-        <div class="stat-card">
-          <span>Journal Entries</span>
-          <strong id="journalCount">0</strong>
-          <small>Development records</small>
-        </div>
-      </div>
-
-      <div class="content-grid">
-        <div class="panel">
-          <div class="panel-heading">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-logo">TSB</div>
             <div>
-              <h3>Recent Projects</h3>
-              <p>Your development overview</p>
+                <h2>TSB PORTAL</h2>
+                <small>Developer Workspace</small>
             </div>
-            <button class="text-button" data-go="projects">View all →</button>
-          </div>
-          <div id="recentProjects" class="empty">No projects added yet.</div>
         </div>
 
-        <div class="panel">
-          <div class="panel-heading">
+        <div class="nav-label">WORKSPACE</div>
+        <nav>
+            <button class="nav-link active" data-page="dashboard">◈ Dashboard</button>
+            <button class="nav-link" data-page="projects">▣ Projects</button>
+            <button class="nav-link" data-page="tasks">☑ Tasks</button>
+            <button class="nav-link" data-page="journal">▤ Journal</button>
+            <button class="nav-link" data-page="activity">◷ Activity Recorder</button>
+            <button class="nav-link" data-page="team">♙ Team</button>
+            <button class="nav-link" data-page="settings">⚙ Settings</button>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="online-dot"></div>
+            Local Workspace
+            <small>Designed & Developed by tsb - team leader Taj Sasmith</small>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
             <div>
-              <h3>Quick Actions</h3>
-              <p>Start working</p>
+                <div class="eyebrow">THE SUPER BOYS STUDIO</div>
+                <h1 id="pageTitle">Dashboard</h1>
             </div>
-          </div>
-          <button class="action-button" data-go="projects">＋ Add New Project</button>
-          <button class="action-button" data-go="tasks">＋ Create Task</button>
-          <button class="action-button" data-go="journal">＋ Write Journal Entry</button>
-        </div>
-      </div>
-    </section>
+            <div class="top-actions">
+                <span class="local-badge">● LOCAL MODE</span>
+                <button class="primary-btn" id="quickAdd">+ New Item</button>
+            </div>
+        </header>
 
-    <section id="projects" class="page">
-      <div class="section-heading">
-        <div>
-          <h2>Projects Manager</h2>
-          <p>Manage TSB games and software projects.</p>
-        </div>
-        <button class="primary-button admin-only" id="addProjectBtn">＋ New Project</button>
-      </div>
-      <div id="projectList" class="item-list"></div>
-    </section>
+        <section class="page active" id="dashboard">
+            <div class="welcome">
+                <div>
+                    <span class="eyebrow">WORKSPACE OVERVIEW</span>
+                    <h2>Build. Create. Develop.</h2>
+                    <p>Manage your projects, tasks and development activity in one place.</p>
+                </div>
+                <div class="welcome-mark">TSB</div>
+            </div>
 
-    <section id="tasks" class="page">
-      <div class="section-heading">
-        <div>
-          <h2>Task Manager</h2>
-          <p>Keep track of your development work.</p>
-        </div>
-        <button class="primary-button admin-only" id="addTaskBtn">＋ New Task</button>
-      </div>
-      <div id="taskList" class="item-list"></div>
-    </section>
+            <div class="stats">
+                <div class="stat-card"><span>Total Projects</span><strong id="totalProjects">0</strong><small>Workspace projects</small></div>
+                <div class="stat-card"><span>Total Tasks</span><strong id="totalTasks">0</strong><small>All tasks</small></div>
+                <div class="stat-card"><span>Completed Tasks</span><strong id="completedTasks">0</strong><small>Finished tasks</small></div>
+                <div class="stat-card"><span>Journal Entries</span><strong id="totalJournal">0</strong><small>Development notes</small></div>
+            </div>
 
-    <section id="journal" class="page">
-      <div class="section-heading">
-        <div>
-          <h2>Development Journal</h2>
-          <p>Record important development updates.</p>
-        </div>
-        <button class="primary-button" id="addJournalBtn">＋ New Entry</button>
-      </div>
-      <div id="journalList" class="item-list"></div>
-    </section>
+            <div class="content-grid">
+                <div class="panel">
+                    <div class="panel-heading"><div><span class="eyebrow">YOUR WORK</span><h3>Recent Projects</h3></div><button class="text-btn" data-goto="projects">View all →</button></div>
+                    <div id="recentProjects" class="item-list"></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-heading"><div><span class="eyebrow">TASK MANAGEMENT</span><h3>Task Progress</h3></div></div>
+                    <div class="progress-number" id="taskProgress">0%</div>
+                    <div class="progress-track"><div id="taskProgressBar"></div></div>
+                    <p class="muted" id="taskProgressText">No tasks yet.</p>
+                    <div class="divider"></div>
+                    <div class="panel-heading"><h3>Recent Tasks</h3><button class="text-btn" data-goto="tasks">View all →</button></div>
+                    <div id="recentTasks" class="item-list"></div>
+                </div>
+            </div>
+        </section>
 
-    <section id="team" class="page">
-      <div class="section-heading">
-        <div>
-          <h2>Team Workspace</h2>
-          <p>TSB development team information.</p>
-        </div>
-      </div>
-      <div class="panel">
-        <h3>Team Members</h3>
-        <div class="team-member">
-          <div class="avatar">T</div>
-          <div><strong>Taj Sasmith</strong><small>Team Leader / Admin</small></div>
-          <span class="role-tag">ADMIN</span>
-        </div>
-        <p class="notice">Add your other team members when the team workspace is ready.</p>
-      </div>
-    </section>
+        <section class="page" id="projects">
+            <div class="section-heading">
+                <div><span class="eyebrow">PROJECT MANAGEMENT</span><h2>All Projects</h2><p class="muted">Create and manage your development projects.</p></div>
+                <button class="primary-btn" id="addProject">+ Add Project</button>
+            </div>
+            <input class="search" id="projectSearch" placeholder="Search projects...">
+            <div id="projectList" class="card-grid"></div>
+        </section>
 
-    <section id="settings" class="page">
-      <div class="section-heading">
-        <div>
-          <h2>Settings</h2>
-          <p>Portal configuration and local data.</p>
-        </div>
-      </div>
-      <div class="panel settings-panel">
-        <h3>Workspace Information</h3>
-        <p>Application: TSB Developer Portal</p>
-        <p>Version: 1.0.0</p>
-        <p>Storage: Browser Local Storage</p>
-        <p>Theme: Dark / Red</p>
-        <hr>
-        <h3>Local Data</h3>
-        <p class="notice">Your projects, tasks and journal entries are stored in this browser.</p>
-        <button class="danger-button" id="exportBtn">Export Backup</button>
-        <button class="danger-button" id="clearBtn">Clear All Local Data</button>
-      </div>
-    </section>
+        <section class="page" id="tasks">
+            <div class="section-heading">
+                <div><span class="eyebrow">TASK MANAGEMENT</span><h2>All Tasks</h2><p class="muted">Organize your work and track progress.</p></div>
+                <button class="primary-btn" id="addTask">+ Add Task</button>
+            </div>
+            <input class="search" id="taskSearch" placeholder="Search tasks...">
+            <div id="taskList" class="item-list"></div>
+        </section>
 
-    <footer>DESIGNED & DEVELOPED BY TSB — TEAM LEADER TAJ SASMITH</footer>
-  </main>
+        <section class="page" id="journal">
+            <div class="section-heading">
+                <div><span class="eyebrow">DEVELOPMENT LOG</span><h2>Journal</h2><p class="muted">Keep a record of your ideas and progress.</p></div>
+                <button class="primary-btn" id="addJournal">+ New Entry</button>
+            </div>
+            <input class="search" id="journalSearch" placeholder="Search journal...">
+            <div id="journalList" class="card-grid"></div>
+        </section>
+
+        <section class="page" id="activity">
+            <div class="section-heading">
+                <div><span class="eyebrow">DESKTOP WORK TRACKING</span><h2>Activity Recorder</h2><p class="muted">See which desktop applications are active and how long they are used.</p></div>
+                <span class="local-badge">● PRIVATE · LOCAL</span>
+            </div>
+
+            <div class="activity-status panel">
+                <div>
+                    <span class="eyebrow">RECORDER STATUS</span>
+                    <h2 id="recorderStatus">Connecting...</h2>
+                    <p class="muted" id="recorderMessage">Checking local recorder connection.</p>
+                </div>
+                <div class="status-indicator" id="recorderIndicator"></div>
+            </div>
+
+            <div class="stats activity-stats">
+                <div class="stat-card"><span>Tracked Today</span><strong id="trackedTime">0m</strong><small>Active application time</small></div>
+                <div class="stat-card"><span>Applications</span><strong id="appCount">0</strong><small>Different applications</small></div>
+                <div class="stat-card"><span>Idle Time</span><strong id="idleTime">—</strong><small>Recorder pauses when idle</small></div>
+                <div class="stat-card"><span>Last Update</span><strong id="lastUpdate">—</strong><small>Local computer time</small></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-heading"><div><span class="eyebrow">APPLICATION USAGE</span><h3>Today's Activity</h3></div><button class="text-btn" id="refreshActivity">Refresh ↻</button></div>
+                <div id="activityList" class="item-list"><p class="muted">Waiting for recorder data...</p></div>
+            </div>
+
+            <p class="privacy-note">Privacy: This recorder stores application names and active durations only. It does not record keystrokes, passwords, screenshots, window titles, messages or private content. Data stays on this computer.</p>
+        </section>
+
+        <section class="page" id="team">
+            <div class="section-heading"><div><span class="eyebrow">WORKSPACE MEMBERS</span><h2>Team</h2><p class="muted">Local workspace role selection.</p></div></div>
+            <div class="panel">
+                <h3>Current Workspace Role</h3>
+                <select id="roleSelect" class="field">
+                    <option>Team Leader</option>
+                    <option>Developer</option>
+                    <option>Designer</option>
+                    <option>Tester</option>
+                </select>
+                <p class="muted">This is a local display preference, not a login or security permission system.</p>
+            </div>
+        </section>
+
+        <section class="page" id="settings">
+            <div class="section-heading"><div><span class="eyebrow">WORKSPACE CONFIGURATION</span><h2>Settings</h2><p class="muted">Manage local workspace data.</p></div></div>
+            <div class="panel settings-panel">
+                <h3>Backup & Restore</h3>
+                <p class="muted">Export your projects, tasks and journal entries as a JSON backup.</p>
+                <button class="primary-btn" id="exportData">Export Backup</button>
+                <label class="secondary-btn file-label">Import Backup<input type="file" id="importData" accept=".json,application/json"></label>
+            </div>
+            <div class="panel danger-panel">
+                <h3>Clear Workspace Data</h3>
+                <p class="muted">This permanently removes locally saved projects, tasks and journal entries.</p>
+                <button class="danger-btn" id="clearData">Clear Local Data</button>
+            </div>
+        </section>
+
+        <footer>THE SUPER BOYS STUDIO · DEVELOPER PORTAL</footer>
+    </main>
 </div>
 
-<div id="modal" class="modal">
-  <div class="modal-card">
-    <div class="modal-heading">
-      <h2 id="modalTitle">Create Item</h2>
-      <button id="closeModal" class="close-button">×</button>
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <div class="modal-heading"><h2 id="modalTitle">Create Item</h2><button class="close-btn" id="closeModal">×</button></div>
+        <form id="itemForm">
+            <input type="hidden" id="itemId">
+            <input type="hidden" id="itemType">
+            <label>Title</label>
+            <input class="field" id="itemName" required maxlength="100">
+            <div id="projectFields">
+                <label>Category</label>
+                <select class="field" id="projectCategory">
+                    <option>Game Development</option><option>Web Development</option><option>Software</option><option>Research</option><option>Other</option>
+                </select>
+                <label>Status</label>
+                <select class="field" id="projectStatus">
+                    <option>Planning</option><option>In Progress</option><option>Completed</option><option>On Hold</option>
+                </select>
+                <label>Progress (%)</label>
+                <input class="field" id="projectProgress" type="number" min="0" max="100" value="0">
+            </div>
+            <div id="taskFields">
+                <label>Priority</label>
+                <select class="field" id="taskPriority"><option>Low</option><option selected>Medium</option><option>High</option></select>
+                <label>Due Date</label>
+                <input class="field" id="taskDue" type="date">
+            </div>
+            <label>Description / Notes</label>
+            <textarea class="field" id="itemDescription" rows="5"></textarea>
+            <button class="primary-btn full-btn" type="submit">Save Item</button>
+        </form>
     </div>
-    <form id="itemForm">
-      <div id="formFields"></div>
-      <button class="primary-button full-button" type="submit">Save</button>
-    </form>
-  </div>
 </div>
 
 <script src="script.js"></script>
