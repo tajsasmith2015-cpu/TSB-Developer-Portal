@@ -1,278 +1,400 @@
+"use strict";
 
 const STORAGE_KEY = "tsb_developer_portal_v1";
+const API_BASE = "http://127.0.0.1:8765";
 
-let data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-  projects: [],
-  tasks: [],
-  journal: []
-};
-
-let currentType = "";
+let data = loadData();
 
 const $ = id => document.getElementById(id);
 
+function loadData() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (saved && Array.isArray(saved.projects) &&
+            Array.isArray(saved.tasks) && Array.isArray(saved.journal)) {
+            return saved;
+        }
+    } catch (error) {
+        console.error("Could not load saved data:", error);
+    }
+
+    return { projects: [], tasks: [], journal: [] };
+}
+
 function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  renderAll();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    renderAll();
+}
+
+function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
 function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[char]);
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;",
+        '"': "&quot;", "'": "&#039;"
+    })[char]);
 }
 
 function showPage(page) {
-  document.querySelectorAll(".page").forEach(section => {
-    section.classList.toggle("active-page", section.id === page);
-  });
+    document.querySelectorAll(".page").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".nav-link").forEach(el => el.classList.remove("active"));
 
-  document.querySelectorAll(".nav-item").forEach(button => {
-    button.classList.toggle("active", button.dataset.page === page);
-  });
+    $(page)?.classList.add("active");
+    document.querySelector(`[data-page="${page}"]`)?.classList.add("active");
 
-  const titles = {
-    dashboard: "Dashboard",
-    projects: "Projects",
-    tasks: "Tasks",
-    journal: "Development Journal",
-    team: "Team Workspace",
-    settings: "Settings"
-  };
+    const titles = {
+        dashboard: "Dashboard",
+        projects: "Projects",
+        tasks: "Tasks",
+        journal: "Journal",
+        activity: "Activity Recorder",
+        team: "Team",
+        settings: "Settings"
+    };
 
-  $("pageTitle").textContent = titles[page] || "Dashboard";
+    $("pageTitle").textContent = titles[page] || "Dashboard";
+
+    if (page === "activity") refreshActivity();
 }
 
-document.querySelectorAll(".nav-item").forEach(button => {
-  button.addEventListener("click", () => showPage(button.dataset.page));
+document.querySelectorAll("[data-page]").forEach(button => {
+    button.addEventListener("click", () => showPage(button.dataset.page));
 });
 
-document.querySelectorAll("[data-go]").forEach(button => {
-  button.addEventListener("click", () => showPage(button.dataset.go));
+document.querySelectorAll("[data-goto]").forEach(button => {
+    button.addEventListener("click", () => showPage(button.dataset.goto));
 });
 
-function updateRole() {
-  const isAdmin = $("roleSelect").value === "Admin";
-  document.querySelectorAll(".admin-only").forEach(button => {
-    button.style.display = isAdmin ? "" : "none";
-  });
-}
+function openModal(type, item = null) {
+    $("itemForm").reset();
+    $("itemType").value = type;
+    $("itemId").value = item?.id || "";
+    $("itemName").value = item?.name || "";
+    $("itemDescription").value = item?.description || "";
 
-$("roleSelect").addEventListener("change", updateRole);
+    $("projectFields").classList.toggle("visible", type === "project");
+    $("taskFields").classList.toggle("visible", type === "task");
 
-function openModal(type) {
-  currentType = type;
-  $("itemForm").reset();
-
-  const fields = {
-    project: [
-      ["name", "Project Name", "text"],
-      ["category", "Category", "select", ["Game", "Software", "Website", "Other"]],
-      ["status", "Status", "select", ["Planning", "In Development", "Completed"]],
-      ["description", "Description", "textarea"]
-    ],
-    task: [
-      ["name", "Task Name", "text"],
-      ["priority", "Priority", "select", ["Low", "Medium", "High"]],
-      ["description", "Description", "textarea"]
-    ],
-    journal: [
-      ["title", "Entry Title", "text"],
-      ["description", "Development Notes", "textarea"]
-    ]
-  };
-
-  const titles = {
-    project: "Add New Project",
-    task: "Create New Task",
-    journal: "New Journal Entry"
-  };
-
-  $("modalTitle").textContent = titles[type];
-
-  $("formFields").innerHTML = fields[type].map(([name, label, kind, options]) => {
-    let control = "";
-
-    if (kind === "select") {
-      control = `<select name="${name}" required>
-        ${options.map(option =>
-          `<option value="${escapeHTML(option)}">${escapeHTML(option)}</option>`
-        ).join("")}
-      </select>`;
-    } else if (kind === "textarea") {
-      control = `<textarea name="${name}" required></textarea>`;
-    } else {
-      control = `<input name="${name}" type="text" required maxlength="100">`;
+    if (type === "project") {
+        $("projectCategory").value = item?.category || "Game Development";
+        $("projectStatus").value = item?.status || "Planning";
+        $("projectProgress").value = item?.progress ?? 0;
     }
 
-    return `<div class="field"><label>${label}</label>${control}</div>`;
-  }).join("");
+    if (type === "task") {
+        $("taskPriority").value = item?.priority || "Medium";
+        $("taskDue").value = item?.due || "";
+    }
 
-  $("modal").classList.add("show");
+    const names = { project: "Project", task: "Task", journal: "Journal Entry" };
+    $("modalTitle").textContent = `${item ? "Edit" : "Create"} ${names[type]}`;
+    $("modal").classList.add("open");
 }
 
 function closeModal() {
-  $("modal").classList.remove("show");
+    $("modal").classList.remove("open");
 }
 
 $("closeModal").addEventListener("click", closeModal);
 
 $("modal").addEventListener("click", event => {
-  if (event.target === $("modal")) closeModal();
+    if (event.target === $("modal")) closeModal();
 });
 
-$("addProjectBtn").addEventListener("click", () => openModal("project"));
-$("addTaskBtn").addEventListener("click", () => openModal("task"));
-$("addJournalBtn").addEventListener("click", () => openModal("journal"));
+$("addProject").addEventListener("click", () => openModal("project"));
+$("addTask").addEventListener("click", () => openModal("task"));
+$("addJournal").addEventListener("click", () => openModal("journal"));
+
+$("quickAdd").addEventListener("click", () => {
+    const page = document.querySelector(".page.active")?.id || "project";
+    openModal(page === "tasks" ? "task" : page === "journal" ? "journal" : "project");
+});
 
 $("itemForm").addEventListener("submit", event => {
-  event.preventDefault();
+    event.preventDefault();
 
-  const form = new FormData(event.target);
-  const item = Object.fromEntries(form.entries());
+    const type = $("itemType").value;
+    const id = $("itemId").value;
+    const collection = type === "project" ? data.projects :
+        type === "task" ? data.tasks : data.journal;
 
-  item.id = Date.now().toString();
-  item.created = new Date().toLocaleDateString();
+    const old = collection.find(item => item.id === id);
 
-  if (currentType === "task") item.completed = false;
+    const item = {
+        ...(old || {}),
+        id: id || uid(),
+        name: $("itemName").value.trim(),
+        description: $("itemDescription").value.trim(),
+        updatedAt: new Date().toISOString()
+    };
 
-  data[
-    currentType === "project" ? "projects" :
-    currentType === "task" ? "tasks" : "journal"
-  ].unshift(item);
+    if (type === "project") {
+        item.category = $("projectCategory").value;
+        item.status = $("projectStatus").value;
+        item.progress = Math.min(100, Math.max(0, Number($("projectProgress").value) || 0));
+    }
 
-  saveData();
-  closeModal();
+    if (type === "task") {
+        item.priority = $("taskPriority").value;
+        item.due = $("taskDue").value;
+        item.completed = old?.completed || false;
+    }
+
+    if (!item.name) return;
+
+    if (old) {
+        Object.assign(old, item);
+    } else {
+        item.createdAt = new Date().toISOString();
+        collection.unshift(item);
+    }
+
+    saveData();
+    closeModal();
 });
 
-function removeItem(type, id) {
-  if (!confirm("Are you sure you want to delete this item?")) return;
-  data[type] = data[type].filter(item => item.id !== id);
-  saveData();
+function deleteItem(type, id) {
+    if (!confirm("Are you sure you want to delete this item?")) return;
+
+    const collection = type === "project" ? data.projects :
+        type === "task" ? data.tasks : data.journal;
+
+    data[type === "project" ? "projects" : type === "task" ? "tasks" : "journal"] =
+        collection.filter(item => item.id !== id);
+
+    saveData();
+}
+
+function editItem(type, id) {
+    const collection = type === "project" ? data.projects :
+        type === "task" ? data.tasks : data.journal;
+
+    const item = collection.find(entry => entry.id === id);
+    if (item) openModal(type, item);
 }
 
 function toggleTask(id) {
-  const task = data.tasks.find(item => item.id === id);
-  if (!task) return;
-  task.completed = !task.completed;
-  saveData();
+    const task = data.tasks.find(item => item.id === id);
+    if (!task) return;
+
+    task.completed = !task.completed;
+    saveData();
+}
+
+function emptyMessage(message) {
+    return `<div class="empty-state">${escapeHTML(message)}</div>`;
+}
+
+function renderDashboard() {
+    const completed = data.tasks.filter(task => task.completed).length;
+    const percentage = data.tasks.length ?
+        Math.round(completed / data.tasks.length * 100) : 0;
+
+    $("totalProjects").textContent = data.projects.length;
+    $("totalTasks").textContent = data.tasks.length;
+    $("completedTasks").textContent = completed;
+    $("totalJournal").textContent = data.journal.length;
+
+    $("taskProgress").textContent = percentage + "%";
+    $("taskProgressBar").style.width = percentage + "%";
+    $("taskProgressText").textContent =
+        `${completed} of ${data.tasks.length} tasks completed.`;
+
+    $("recentProjects").innerHTML = data.projects.slice(0, 5).map(project => `
+        <div class="item-row">
+            <div><h4>${escapeHTML(project.name)}</h4>
+            <p>${escapeHTML(project.category || "Project")} · ${escapeHTML(project.status || "Planning")}</p></div>
+            <span class="tag">${Number(project.progress) || 0}%</span>
+        </div>
+    `).join("") || emptyMessage("No projects created yet.");
+
+    $("recentTasks").innerHTML = data.tasks.slice(0, 5).map(task => `
+        <div class="item-row">
+            <div><h4>${escapeHTML(task.name)}</h4>
+            <p>${task.completed ? "Completed" : escapeHTML(task.priority || "Medium")}</p></div>
+            <span class="tag">${task.completed ? "DONE" : "OPEN"}</span>
+        </div>
+    `).join("") || emptyMessage("No tasks created yet.");
 }
 
 function renderProjects() {
-  const container = $("projectList");
+    const query = $("projectSearch").value.toLowerCase();
 
-  if (!data.projects.length) {
-    container.innerHTML = '<div class="empty">No projects yet. Add your first project.</div>';
-  } else {
-    container.innerHTML = data.projects.map(project => `
-      <div class="item-card">
-        <div>
-          <h3>${escapeHTML(project.name)}</h3>
-          <p>${escapeHTML(project.category)} · ${escapeHTML(project.description)}</p>
-          <p>Created: ${escapeHTML(project.created)}</p>
-        </div>
-        <div class="item-actions">
-          <span class="tag">${escapeHTML(project.status)}</span>
-          <button class="small-button" data-delete="projects" data-id="${project.id}">Delete</button>
-        </div>
-      </div>
-    `).join("");
-  }
+    const projects = data.projects.filter(item =>
+        `${item.name} ${item.category} ${item.status}`.toLowerCase().includes(query)
+    );
 
-  $("recentProjects").innerHTML = data.projects.length
-    ? data.projects.slice(0, 3).map(project =>
-        `<div class="item-card"><div><h3>${escapeHTML(project.name)}</h3><p>${escapeHTML(project.category)}</p></div><span class="tag">${escapeHTML(project.status)}</span></div>`
-      ).join("")
-    : '<div class="empty">No projects added yet.</div>';
+    $("projectList").innerHTML = projects.map(project => `
+        <article class="item-card">
+            <div class="item-card-top">
+                <span class="tag">${escapeHTML(project.category)}</span>
+                <span class="tag">${escapeHTML(project.status)}</span>
+            </div>
+            <h3>${escapeHTML(project.name)}</h3>
+            <p>${escapeHTML(project.description || "No description added.")}</p>
+            <div class="card-progress">
+                <small class="muted">Progress: ${Number(project.progress) || 0}%</small>
+                <div class="progress-track"><div style="width:${Math.min(100,Math.max(0,Number(project.progress)||0))}%"></div></div>
+            </div>
+            <div class="row-actions">
+                <button class="small-btn" onclick="editItem('project','${project.id}')">Edit</button>
+                <button class="small-btn" onclick="deleteItem('project','${project.id}')">Delete</button>
+            </div>
+        </article>
+    `).join("") || emptyMessage("No projects found.");
 }
 
 function renderTasks() {
-  const container = $("taskList");
+    const query = $("taskSearch").value.toLowerCase();
 
-  container.innerHTML = data.tasks.length
-    ? data.tasks.map(task => `
-      <div class="item-card">
-        <div>
-          <h3>${escapeHTML(task.name)}</h3>
-          <p>${escapeHTML(task.description)}</p>
-          <p>Priority: ${escapeHTML(task.priority)}</p>
+    const tasks = data.tasks.filter(item =>
+        `${item.name} ${item.description} ${item.priority}`.toLowerCase().includes(query)
+    );
+
+    $("taskList").innerHTML = tasks.map(task => `
+        <div class="item-row">
+            <div>
+                <h4>${escapeHTML(task.name)}</h4>
+                <p>${escapeHTML(task.priority || "Medium")} Priority
+                ${task.due ? " · Due " + escapeHTML(task.due) : ""}
+                · ${task.completed ? "Completed" : "Pending"}</p>
+                <p>${escapeHTML(task.description || "")}</p>
+            </div>
+            <div class="row-actions">
+                <button class="small-btn" onclick="toggleTask('${task.id}')">${task.completed ? "Reopen" : "Complete"}</button>
+                <button class="small-btn" onclick="editItem('task','${task.id}')">Edit</button>
+                <button class="small-btn" onclick="deleteItem('task','${task.id}')">Delete</button>
+            </div>
         </div>
-        <div class="item-actions">
-          <button class="small-button" data-toggle="${task.id}">
-            ${task.completed ? "Reopen" : "Complete"}
-          </button>
-          <span class="tag">${task.completed ? "COMPLETED" : "PENDING"}</span>
-          <button class="small-button" data-delete="tasks" data-id="${task.id}">Delete</button>
-        </div>
-      </div>
-    `).join("")
-    : '<div class="empty">No tasks yet. Create your first task.</div>';
+    `).join("") || emptyMessage("No tasks found.");
 }
 
 function renderJournal() {
-  $("journalList").innerHTML = data.journal.length
-    ? data.journal.map(entry => `
-      <div class="item-card">
-        <div>
-          <h3>${escapeHTML(entry.title)}</h3>
-          <p>${escapeHTML(entry.description)}</p>
-          <p>${escapeHTML(entry.created)}</p>
-        </div>
-        <button class="small-button" data-delete="journal" data-id="${entry.id}">Delete</button>
-      </div>
-    `).join("")
-    : '<div class="empty">No journal entries yet.</div>';
-}
+    const query = $("journalSearch").value.toLowerCase();
 
-document.addEventListener("click", event => {
-  const deleteButton = event.target.closest("[data-delete]");
-  if (deleteButton) {
-    removeItem(deleteButton.dataset.delete, deleteButton.dataset.id);
-  }
+    const entries = data.journal.filter(item =>
+        `${item.name} ${item.description}`.toLowerCase().includes(query)
+    );
 
-  const toggleButton = event.target.closest("[data-toggle]");
-  if (toggleButton) {
-    toggleTask(toggleButton.dataset.toggle);
-  }
-});
-
-function renderStats() {
-  $("projectCount").textContent = data.projects.length;
-  $("taskCount").textContent = data.tasks.length;
-  $("completedCount").textContent = data.tasks.filter(task => task.completed).length;
-  $("journalCount").textContent = data.journal.length;
+    $("journalList").innerHTML = entries.map(entry => `
+        <article class="item-card">
+            <span class="tag">DEVELOPMENT NOTE</span>
+            <h3>${escapeHTML(entry.name)}</h3>
+            <p>${escapeHTML(entry.description || "No notes added.")}</p>
+            <small class="muted">${new Date(entry.createdAt || Date.now()).toLocaleString()}</small>
+            <div class="row-actions" style="margin-top:15px">
+                <button class="small-btn" onclick="editItem('journal','${entry.id}')">Edit</button>
+                <button class="small-btn" onclick="deleteItem('journal','${entry.id}')">Delete</button>
+            </div>
+        </article>
+    `).join("") || emptyMessage("No journal entries found.");
 }
 
 function renderAll() {
-  renderProjects();
-  renderTasks();
-  renderJournal();
-  renderStats();
+    renderDashboard();
+    renderProjects();
+    renderTasks();
+    renderJournal();
 }
 
-$("exportBtn").addEventListener("click", () => {
-  const file = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json"
-  });
-
-  const url = URL.createObjectURL(file);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "TSB_Portal_Backup.json";
-  link.click();
-  URL.revokeObjectURL(url);
+["projectSearch", "taskSearch", "journalSearch"].forEach(id => {
+    $(id).addEventListener("input", renderAll);
 });
 
-$("clearBtn").addEventListener("click", () => {
-  if (!confirm("This will permanently clear all portal data saved in this browser. Continue?")) return;
-
-  data = { projects: [], tasks: [], journal: [] };
-  saveData();
+$("roleSelect").value = localStorage.getItem("tsb_role") || "Team Leader";
+$("roleSelect").addEventListener("change", event => {
+    localStorage.setItem("tsb_role", event.target.value);
 });
+
+$("exportData").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "TSB-Developer-Portal-Backup.json";
+    link.click();
+    URL.revokeObjectURL(url);
+});
+
+$("importData").addEventListener("change", async event => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+        const imported = JSON.parse(await file.text());
+
+        if (!Array.isArray(imported.projects) ||
+            !Array.isArray(imported.tasks) ||
+            !Array.isArray(imported.journal)) {
+            throw new Error("Invalid backup format.");
+        }
+
+        if (!confirm("Replace current workspace data with this backup?")) return;
+
+        data = imported;
+        saveData();
+        alert("Backup imported successfully.");
+    } catch (error) {
+        alert("Could not import this backup: " + error.message);
+    } finally {
+        event.target.value = "";
+    }
+});
+
+$("clearData").addEventListener("click", () => {
+    if (!confirm("Permanently clear all projects, tasks and journal entries?")) return;
+
+    data = { projects: [], tasks: [], journal: [] };
+    saveData();
+});
+
+function formatDuration(seconds) {
+    seconds = Math.max(0, Number(seconds) || 0);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+
+    if (hours) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+}
+
+async function refreshActivity() {
+    try {
+        const response = await fetch(`${API_BASE}/api/activity/today`, {
+            cache: "no-store"
+        });
+
+        if (!response.ok) throw new Error("Recorder unavailable");
+
+        const result = await response.json();
+
+        $("recorderStatus").textContent = "Recorder Connected";
+        $("recorderMessage").textContent = "Local desktop activity data is available.";
+        $("recorderIndicator").classList.add("online");
+
+        $("trackedTime").textContent = formatDuration(result.total_seconds);
+        $("appCount").textContent = result.applications.length;
+        $("idleTime").textContent = result.idle ? "Idle" : "Active";
+        $("lastUpdate").textContent = new Date().toLocaleTimeString();
+
+        $("activityList").innerHTML = result.applications.map(app => `
+            <div class="item-row">
+                <div><h4>${escapeHTML(app.application)}</h4>
+                <p>Foreground application</p></div>
+                <span class="tag">${formatDuration(app.seconds)}</span>
+            </div>
+        `).join("") || emptyMessage("No application activity recorded yet.");
+    } catch (error) {
+        $("recorderStatus").textContent = "Recorder Offline";
+        $("recorderMessage").textContent =
+            "Start the local recorder using start_recorder.bat.";
+        $("recorderIndicator").classList.remove("online");
+        $("activityList").innerHTML =
+            emptyMessage("No connection to the local recorder. Make sure recorder.py is running.");
+    }
+}
+
+$("refreshActivity").addEventListener("click", refreshActivity);
 
 renderAll();
-updateRole();
